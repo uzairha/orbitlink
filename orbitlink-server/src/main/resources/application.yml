@@ -33,6 +33,13 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
+orbitlink:
+  ingestion:
+    enabled: ${ORBITLINK_INGESTION_ENABLED:true}
+    # The spacecraft downlink port. Separate from the HTTP port because this
+    # is a raw CCSDS packet stream, not HTTP.
+    port: ${ORBITLINK_INGESTION_PORT:9000}
+
 management:
   endpoints:
     web:

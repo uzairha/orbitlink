@@ -1,6 +1,7 @@
 package com.orbitlink.server.dictionary;
 
 import com.orbitlink.server.dictionary.yaml.DictionaryFile;
+import com.orbitlink.server.telemetry.ActiveDictionaryCache;
 import java.io.InputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,7 @@ public class DictionaryBootstrap implements ApplicationRunner {
     private final DictionaryLoader loader;
     private final TelemetryDictionaryRepository repository;
     private final ResourceLoader resourceLoader;
+    private final ActiveDictionaryCache dictionaryCache;
     private final boolean enabled;
     private final String location;
 
@@ -38,30 +40,33 @@ public class DictionaryBootstrap implements ApplicationRunner {
             DictionaryLoader loader,
             TelemetryDictionaryRepository repository,
             ResourceLoader resourceLoader,
+            ActiveDictionaryCache dictionaryCache,
             @Value("${orbitlink.dictionary.bootstrap-enabled:true}") boolean enabled,
             @Value("${orbitlink.dictionary.location:classpath:dictionary/sample-dictionary.yaml}")
             String location) {
         this.loader = loader;
         this.repository = repository;
         this.resourceLoader = resourceLoader;
+        this.dictionaryCache = dictionaryCache;
         this.enabled = enabled;
         this.location = location;
     }
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        if (!enabled) {
-            log.info("Dictionary bootstrap disabled");
-            return;
-        }
-        if (repository.count() > 0) {
-            log.info("Dictionary already present, skipping bootstrap");
-            return;
+        if (enabled && repository.count() == 0) {
+            try (InputStream in = resourceLoader.getResource(location).getInputStream()) {
+                DictionaryFile file = loader.parse(in);
+                loader.load(file, location, true);
+            }
+        } else {
+            log.info("Skipping dictionary bootstrap (enabled={}, existing={})",
+                    enabled, repository.count());
         }
 
-        try (InputStream in = resourceLoader.getResource(location).getInputStream()) {
-            DictionaryFile file = loader.parse(in);
-            loader.load(file, location, true);
-        }
+        // Always populate the cache, bootstrap or not: on a restart against an
+        // existing database nothing else would load it, and ingestion would
+        // silently drop every packet for want of a dictionary.
+        dictionaryCache.reload();
     }
 }
