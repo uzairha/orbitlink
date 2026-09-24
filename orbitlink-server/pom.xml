@@ -35,6 +35,14 @@
       <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
 
+    <!-- Jackson's YAML backend, for parsing telemetry dictionary files.
+         Version comes from the Spring Boot BOM so it always matches the
+         jackson-databind already pulled in by starter-web. -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-yaml</artifactId>
+    </dependency>
+
     <!-- Flyway owns the schema. Hibernate's ddl-auto is left off so the
          schema in Postgres is always exactly what the versioned migrations
          describe, in dev and in CI alike. -->

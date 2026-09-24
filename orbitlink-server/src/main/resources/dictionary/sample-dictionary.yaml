@@ -1,0 +1,146 @@
+# OrbitLink sample telemetry dictionary.
+#
+# Two packets, identified by CCSDS APID:
+#   100 - electrical power and thermal housekeeping
+#   101 - attitude determination
+#
+# bitOffset is measured from the first bit of the packet DATA field, so the
+# 6-byte CCSDS primary header is not counted. The simulator (phase 4) and the
+# decoder (phase 5) must both honour that convention.
+
+version: "1.0.0"
+description: Baseline housekeeping and attitude dictionary for the OrbitLink demo spacecraft
+
+parameters:
+
+  # --- APID 100: power and thermal -----------------------------------------
+
+  - mnemonic: BATT_BUS_V
+    name: Battery bus voltage
+    description: Main unregulated bus voltage measured at the battery terminals
+    apid: 100
+    dataType: UNSIGNED_INT
+    bitOffset: 0
+    bitLength: 16
+    units: V
+    # Raw counts are millivolts; 0.001 V per count puts the value in volts.
+    calScale: 0.001
+    calOffset: 0.0
+    minValue: 22.0
+    maxValue: 34.0
+
+  - mnemonic: BATT_CURRENT
+    name: Battery current
+    description: Positive on discharge, negative while charging
+    apid: 100
+    dataType: SIGNED_INT
+    bitOffset: 16
+    bitLength: 16
+    units: A
+    calScale: 0.01
+    calOffset: 0.0
+    minValue: -20.0
+    maxValue: 20.0
+
+  - mnemonic: BATT_TEMP
+    name: Battery temperature
+    description: Thermistor on the battery pack
+    apid: 100
+    dataType: SIGNED_INT
+    bitOffset: 32
+    bitLength: 16
+    units: degC
+    # Raw counts are hundredths of a degree with a -273.15 K/C conversion
+    # already applied on board, so only the scale is needed here.
+    calScale: 0.01
+    calOffset: 0.0
+    minValue: -20.0
+    maxValue: 60.0
+
+  - mnemonic: SOLAR_ARRAY_PWR
+    name: Solar array output power
+    apid: 100
+    dataType: UNSIGNED_INT
+    bitOffset: 48
+    bitLength: 16
+    units: W
+    calScale: 0.1
+    calOffset: 0.0
+    minValue: 0.0
+    maxValue: 450.0
+
+  - mnemonic: EPS_MODE
+    name: Electrical power subsystem mode
+    apid: 100
+    dataType: ENUM
+    bitOffset: 64
+    bitLength: 8
+    enumStates:
+      - rawValue: 0
+        label: NOMINAL
+      - rawValue: 1
+        label: LOW_POWER
+      - rawValue: 2
+        label: SAFE_MODE
+      - rawValue: 3
+        label: SURVIVAL
+
+  - mnemonic: HEATER_ON
+    name: Battery heater enabled
+    apid: 100
+    dataType: BOOLEAN
+    bitOffset: 72
+    bitLength: 1
+
+  # --- APID 101: attitude ---------------------------------------------------
+
+  - mnemonic: ATT_ROLL
+    name: Roll angle
+    apid: 101
+    dataType: SIGNED_INT
+    bitOffset: 0
+    bitLength: 16
+    units: deg
+    # +/-180 degrees mapped across a signed 16-bit field.
+    calScale: 0.0055
+    calOffset: 0.0
+    minValue: -180.0
+    maxValue: 180.0
+
+  - mnemonic: ATT_PITCH
+    name: Pitch angle
+    apid: 101
+    dataType: SIGNED_INT
+    bitOffset: 16
+    bitLength: 16
+    units: deg
+    calScale: 0.0055
+    calOffset: 0.0
+    minValue: -90.0
+    maxValue: 90.0
+
+  - mnemonic: ATT_YAW
+    name: Yaw angle
+    apid: 101
+    dataType: SIGNED_INT
+    bitOffset: 32
+    bitLength: 16
+    units: deg
+    calScale: 0.0055
+    calOffset: 0.0
+    minValue: -180.0
+    maxValue: 180.0
+
+  - mnemonic: GYRO_HEALTH
+    name: Gyroscope health status
+    apid: 101
+    dataType: ENUM
+    bitOffset: 48
+    bitLength: 8
+    enumStates:
+      - rawValue: 0
+        label: OK
+      - rawValue: 1
+        label: DEGRADED
+      - rawValue: 2
+        label: FAILED
