@@ -42,3 +42,21 @@ jobs:
             **/target/site/jacoco/**
           if-no-files-found: ignore
           retention-days: 7
+
+  # The frontend is a separate toolchain, so it gets its own job rather than
+  # slowing the Java build. tsc -b runs as part of `npm run build`, so a type
+  # error fails CI here.
+  ui:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: orbitlink-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: orbitlink-ui/package-lock.json
+      - run: npm ci
+      - run: npm run build

@@ -18,3 +18,8 @@ target/
 # Local overrides
 .env
 application-local.yml
+
+# Frontend
+node_modules/
+dist/
+*.tsbuildinfo

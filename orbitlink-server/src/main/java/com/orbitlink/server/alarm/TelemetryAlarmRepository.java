@@ -12,7 +12,13 @@ public interface TelemetryAlarmRepository extends JpaRepository<TelemetryAlarm, 
     @EntityGraph(attributePaths = "parameter")
     List<TelemetryAlarm> findByClearedAtIsNullOrderByRaisedAtDesc();
 
-    Optional<TelemetryAlarm> findByParameterIdAndClearedAtIsNull();
+    /**
+     * The open alarm for one parameter, if any. Spring Data derives the query
+     * from the method name, so the parameterId argument is not optional —
+     * without it the name promises a filter the method cannot supply and the
+     * whole application context fails to start.
+     */
+    Optional<TelemetryAlarm> findByParameterIdAndClearedAtIsNull(Long parameterId);
 
     @EntityGraph(attributePaths = "parameter")
     List<TelemetryAlarm> findAllByOrderByRaisedAtDesc(Pageable pageable);

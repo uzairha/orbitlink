@@ -64,6 +64,9 @@ mvn -pl orbitlink-server spring-boot:run
 mvn -pl orbitlink-simulator exec:java \
     -Dexec.mainClass=com.orbitlink.simulator.SimulatorMain \
     -Dexec.args="--rate 2 --fault-rate 0.05"
+
+# 4. And the operator dashboard at http://localhost:5173
+cd orbitlink-ui && npm install && npm run dev
 ```
 
 Then:
@@ -223,6 +226,22 @@ for a boolean is an error, because the usual non-empty-string convention would
 turn it into `true`, and `2.7` for an integer is an error rather than silently
 becoming `2`.
 
+### The dashboard builds its forms from the dictionary
+
+The command console renders its inputs from the definitions the API returns —
+argument names, types, ranges and enum options all come from the active
+dictionary. A hard-coded form per command would go silently out of date the
+moment a new dictionary version loaded.
+
+Client-side constraints are applied as input attributes for immediate feedback,
+but the server validates independently and is the authority; the API is
+reachable without the browser. The UI also has to convert form strings to real
+JSON types before sending, precisely because the server refuses to coerce them.
+
+Alarm severity is fetched once and passed to both panels rather than polled by
+each. Two independent polls would drift out of step and briefly show a
+parameter coloured red while the alarm list said it had cleared.
+
 ### Virtual threads for connections
 
 One virtual thread per spacecraft link (Java 21). The work is almost entirely
@@ -243,6 +262,11 @@ orbitlink-simulator/
   SpacecraftState          orbital/thermal/power model
   BitWriter, SpacePacket   independent CCSDS encoder
   TelemetryTransmitter     TCP downlink
+
+orbitlink-ui/              React + Vite + TypeScript operator dashboard
+  api.ts                   typed REST client
+  usePolling.ts            interval polling hook
+  components/              status bar, telemetry table, alarms, command console
 
 deploy/docker-compose.yml  PostgreSQL for local development
 ```
@@ -280,9 +304,10 @@ they actually execute.
 
 ## Roadmap
 
+- Generate the UI's API types from an OpenAPI schema instead of hand-mirroring
+  the server's records
 - Uplink transmission — commands are validated and logged, but not yet sent
 - CCSDS secondary header, so samples carry spacecraft time rather than ground
   receipt time
 - Sequence-count gap detection per APID
 - Time-partitioning for `telemetry_sample`, which grows ~1.7M rows/day at 2 Hz
-- React (Vite + TypeScript) operator dashboard

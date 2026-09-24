@@ -1,0 +1,384 @@
+/* Dark operator console. Mission control screens are dark because they are
+   watched for hours in dim rooms, and because a red alarm has to carry across
+   a room without competing with a bright background. */
+
+:root {
+  --bg: #0b0f14;
+  --panel: #121820;
+  --panel-border: #1e2936;
+  --ink: #e5eaf0;
+  --ink-muted: #7d8b9c;
+  --accent: #4da3ff;
+  --good: #3ecf8e;
+  --warn: #f0b429;
+  --bad: #f4623a;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- status bar --------------------------------------------------------- */
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 14px 24px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--panel-border);
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.brand-mark {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 12px var(--accent);
+  align-self: center;
+}
+
+.brand-name {
+  font-weight: 650;
+  font-size: 17px;
+  letter-spacing: 0.3px;
+}
+
+.brand-sub {
+  color: var(--ink-muted);
+  font-size: 12px;
+}
+
+.status-items {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--ink-muted);
+}
+
+.stat-value {
+  font-family: var(--mono);
+  font-size: 14px;
+}
+
+.tone-good { color: var(--good); }
+.tone-warn { color: var(--warn); }
+.tone-bad  { color: var(--bad); }
+
+.status-error {
+  color: var(--warn);
+  font-size: 12px;
+}
+
+/* --- layout ------------------------------------------------------------- */
+
+.grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 20px;
+  padding: 20px 24px;
+  align-items: start;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+@media (max-width: 960px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 16px 18px 18px;
+  min-width: 0;
+}
+
+.panel h2 {
+  margin: 0 0 14px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--ink-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  background: var(--panel-border);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 1px 8px;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.muted { color: var(--ink-muted); }
+
+/* --- telemetry table ---------------------------------------------------- */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: left;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--ink-muted);
+  font-weight: 500;
+  padding: 0 10px 8px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.data-table td {
+  padding: 9px 10px;
+  border-bottom: 1px solid rgba(30, 41, 54, 0.55);
+}
+
+.data-table .num {
+  text-align: right;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.mnemonic {
+  font-family: var(--mono);
+  font-weight: 600;
+  display: block;
+}
+
+.param-name {
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+
+.value { font-size: 15px; }
+.units { color: var(--ink-muted); font-size: 12px; }
+
+/* A tinted row plus a coloured value: colour alone should not be the only
+   signal, so the value's weight changes too. */
+.row-warn { background: rgba(240, 180, 41, 0.07); }
+.row-bad  { background: rgba(244, 98, 58, 0.09); }
+.row-warn .value, .row-bad .value { font-weight: 700; }
+
+/* --- alarms ------------------------------------------------------------- */
+
+.toggle-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.toggle {
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--ink-muted);
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.toggle.on {
+  background: var(--panel-border);
+  color: var(--ink);
+}
+
+.alarm-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.alarm {
+  border-left: 3px solid var(--panel-border);
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0 6px 6px 0;
+}
+
+.alarm-critical { border-left-color: var(--bad); }
+.alarm-warning  { border-left-color: var(--warn); }
+
+.alarm-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.alarm-detail { font-size: 13px; }
+.alarm-meta { font-size: 11px; margin-top: 3px; }
+
+.chip {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.chip-critical { background: rgba(244, 98, 58, 0.18); color: var(--bad); }
+.chip-warning  { background: rgba(240, 180, 41, 0.18); color: var(--warn); }
+.chip-ok       { background: rgba(62, 207, 142, 0.18); color: var(--good); }
+.chip-cleared  { background: var(--panel-border); color: var(--ink-muted); }
+
+/* --- commands ----------------------------------------------------------- */
+
+.select, .input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--panel-border);
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.command-form {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field-label {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.confirm {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  background: rgba(244, 98, 58, 0.09);
+  border: 1px solid rgba(244, 98, 58, 0.3);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.send {
+  background: var(--accent);
+  color: #06121f;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 16px;
+  font-weight: 650;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.send:disabled { opacity: 0.6; cursor: default; }
+
+.outcome {
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+.outcome.ok  { background: rgba(62, 207, 142, 0.12); color: var(--good); }
+.outcome.bad { background: rgba(244, 98, 58, 0.12); color: var(--bad); }
+.outcome ul  { margin: 6px 0 0; padding-left: 18px; }
+
+.command-log {
+  margin-top: 18px;
+  border-top: 1px solid var(--panel-border);
+  padding-top: 12px;
+}
+
+.command-log h3 {
+  margin: 0 0 8px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--ink-muted);
+  font-weight: 500;
+}
+
+.command-log ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.command-log li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.command-log .reason {
+  flex-basis: 100%;
+  font-size: 11px;
+  padding-left: 2px;
+}
+
+.footer {
+  padding: 14px 24px;
+  color: var(--ink-muted);
+  font-size: 11px;
+  border-top: 1px solid var(--panel-border);
+}

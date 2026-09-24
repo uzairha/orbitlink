@@ -81,14 +81,14 @@ public class AlarmService {
             if (current.isViolation()) {
                 // Same excursion continuing: fold into the existing row rather
                 // than writing a new one.
-                alarmRepository.findByParameterIdAndClearedAtIsNull()
+                alarmRepository.findByParameterIdAndClearedAtIsNull(parameterId)
                         .ifPresent(alarm -> alarm.recordContinuation(value));
             }
             return;
         }
 
         // Any change of state closes whatever was open.
-        Optional<TelemetryAlarm> open = alarmRepository.findByParameterIdAndClearedAtIsNull();
+        Optional<TelemetryAlarm> open = alarmRepository.findByParameterIdAndClearedAtIsNull(parameterId);
         open.ifPresent(alarm -> {
             alarm.clear(observedAt);
             log.info("Alarm cleared: {} {} after {} samples (peak {})",
