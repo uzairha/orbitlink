@@ -17,7 +17,9 @@ import org.junit.jupiter.api.Test;
  */
 class DictionaryParsingTest {
 
-    private final DictionaryLoader loader = new DictionaryLoader(null);
+    // Nulls are safe here: these tests only exercise parse(), which touches
+    // neither the repository nor the validator. Both are only used by load().
+    private final DictionaryLoader loader = new DictionaryLoader(null, null);
 
     private static InputStream yaml(String content) {
         return new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));

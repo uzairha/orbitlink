@@ -2,6 +2,8 @@ package com.orbitlink.server.dictionary;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.orbitlink.server.dictionary.validation.DictionaryValidator;
+import com.orbitlink.server.dictionary.validation.ValidationReport;
 import com.orbitlink.server.dictionary.yaml.DictionaryFile;
 import com.orbitlink.server.dictionary.yaml.EnumStateDefinition;
 import com.orbitlink.server.dictionary.yaml.ParameterDefinition;
@@ -26,10 +28,13 @@ public class DictionaryLoader {
     private static final Logger log = LoggerFactory.getLogger(DictionaryLoader.class);
 
     private final TelemetryDictionaryRepository dictionaryRepository;
+    private final DictionaryValidator validator;
     private final ObjectMapper yamlMapper;
 
-    public DictionaryLoader(TelemetryDictionaryRepository dictionaryRepository) {
+    public DictionaryLoader(TelemetryDictionaryRepository dictionaryRepository,
+                            DictionaryValidator validator) {
         this.dictionaryRepository = dictionaryRepository;
+        this.validator = validator;
         this.yamlMapper = new ObjectMapper(new YAMLFactory())
                 .findAndRegisterModules();
     }
@@ -61,6 +66,17 @@ public class DictionaryLoader {
             throw new IllegalStateException(
                     "dictionary version already loaded: " + file.version());
         }
+
+        // Validate before persisting, never after. This is what lets the
+        // database carry real constraints: anything that reaches it is already
+        // known good. Warnings are logged but do not block.
+        ValidationReport report = validator.validate(file);
+        if (!report.valid()) {
+            throw new InvalidDictionaryException(report);
+        }
+        report.findings().forEach(finding ->
+                log.warn("Dictionary {} [{}] {}: {}",
+                        file.version(), finding.rule(), finding.mnemonic(), finding.message()));
 
         TelemetryDictionary dictionary =
                 new TelemetryDictionary(file.version(), file.description(), sourceFile);

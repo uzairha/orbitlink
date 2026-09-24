@@ -84,6 +84,27 @@
           reporting, so a Testcontainers container never leaks when an
           integration test fails.
         -->
+        <!--
+          Retains method parameter names in the bytecode.
+
+          spring-boot-starter-parent sets this for you, but this project
+          imports the Spring BOM instead of inheriting that parent (see
+          dependencyManagement above) — and a BOM import carries dependency
+          versions only, never plugin configuration. Without -parameters,
+          Spring cannot infer names for @RequestParam, @PathVariable or
+          constructor injection, and fails at runtime with "Name for argument
+          of type [X] not specified".
+        -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.13.0</version>
+          <configuration>
+            <compilerArgs>
+              <arg>-parameters</arg>
+            </compilerArgs>
+          </configuration>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
@@ -121,6 +142,10 @@
     </pluginManagement>
 
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
       <!-- Coverage is wired up now so phase 8 only has to raise thresholds. -->
       <plugin>
         <groupId>org.jacoco</groupId>
