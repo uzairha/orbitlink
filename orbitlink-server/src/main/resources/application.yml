@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: orbitlink-server
+
+  datasource:
+    # Defaults match deploy/docker-compose.yml so `mvn spring-boot:run` works
+    # against the local stack with no extra configuration. Every value can be
+    # overridden by the matching SPRING_DATASOURCE_* environment variable,
+    # which is how the container deployment will supply real credentials.
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/orbitlink}
+    username: ${SPRING_DATASOURCE_USERNAME:orbitlink}
+    password: ${SPRING_DATASOURCE_PASSWORD:orbitlink}
+
+  jpa:
+    # none, not update: Flyway is the single source of truth for the schema.
+    # Letting Hibernate alter tables would mean dev and production schemas
+    # could diverge silently from the migration history.
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    # Phase 1 ships no migrations yet; the first ones arrive with the
+    # dictionary schema in phase 2.
+    fail-on-missing-locations: false
+
+server:
+  port: ${SERVER_PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    com.orbitlink: INFO

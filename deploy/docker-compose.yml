@@ -1,0 +1,29 @@
+name: orbitlink
+
+# Local development infrastructure only. The server and simulator run on the
+# host via Maven during development, which keeps the edit-run loop fast; they
+# get containerised in a later phase once there is something to containerise.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: orbitlink
+      POSTGRES_USER: orbitlink
+      POSTGRES_PASSWORD: orbitlink
+    ports:
+      # Mapped to the host so `mvn spring-boot:run` can reach it with the
+      # default datasource URL in application.yml.
+      - "5432:5432"
+    healthcheck:
+      # Depending services wait on actual readiness rather than "container
+      # started" — Postgres accepts connections several seconds after boot.
+      test: ["CMD-SHELL", "pg_isready -U orbitlink -d orbitlink"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    volumes:
+      - orbitlink_pgdata:/var/lib/postgresql/data
+
+volumes:
+  orbitlink_pgdata:

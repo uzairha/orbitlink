@@ -1,0 +1,20 @@
+target/
+*.class
+
+# Maven wrapper is not committed; the CI pins the Maven version via setup-java.
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+
+# Local overrides
+.env
+application-local.yml

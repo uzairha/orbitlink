@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <!--
+    Aggregator + parent POM.
+
+    packaging=pom means this module produces no jar of its own. It exists to
+    (a) list the modules so `mvn verify` at the root builds both in dependency
+    order, and (b) pin versions in one place so the two modules can never drift
+    onto different Spring or JUnit releases.
+  -->
+  <groupId>com.orbitlink</groupId>
+  <artifactId>orbitlink-parent</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>OrbitLink</name>
+  <description>Satellite telemetry and command service</description>
+
+  <modules>
+    <module>orbitlink-server</module>
+    <module>orbitlink-simulator</module>
+  </modules>
+
+  <properties>
+    <java.version>21</java.version>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+    <spring-boot.version>3.3.5</spring-boot.version>
+    <!--
+      1.20.x negotiates a Docker API version that Docker Desktop 29+ rejects
+      with HTTP 400 on /info, which surfaces confusingly as "Could not find a
+      valid Docker environment" even though the socket is reachable. 1.21.x
+      speaks the newer API.
+    -->
+    <testcontainers.version>1.21.3</testcontainers.version>
+    <docker.api.version>1.43</docker.api.version>
+    <jacoco.version>0.8.12</jacoco.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!--
+        Importing the Spring Boot BOM rather than inheriting from
+        spring-boot-starter-parent. Inheriting would work, but a POM can only
+        have one parent, and this project's parent slot is already taken by
+        orbitlink-parent. Importing gets the same curated version set without
+        that constraint.
+      -->
+      <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-dependencies</artifactId>
+        <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>testcontainers-bom</artifactId>
+        <version>${testcontainers.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-maven-plugin</artifactId>
+          <version>${spring-boot.version}</version>
+        </plugin>
+        <!--
+          Surefire runs unit tests (*Test). Failsafe runs integration tests
+          (*IT) and is bound to the `verify` phase. They are separate on
+          purpose: a failing unit test should stop the build immediately,
+          whereas Failsafe always runs post-integration-test cleanup before
+          reporting, so a Testcontainers container never leaks when an
+          integration test fails.
+        -->
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.5.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>3.5.2</version>
+          <configuration>
+            <environmentVariables>
+              <!--
+                Docker Engine 29 removed support for API versions below 1.40,
+                but the docker-java client inside Testcontainers still
+                negotiates 1.32 by default. The daemon answers that with HTTP
+                400, which Testcontainers reports as "Could not find a valid
+                Docker environment" — pointing at the socket rather than at
+                the real cause. Pinning a supported version fixes it.
+                1.43 is the floor shipped by Docker 24+ (2023), so this is
+                safe on CI runners as well as on Docker Desktop.
+              -->
+              <DOCKER_API_VERSION>${docker.api.version}</DOCKER_API_VERSION>
+            </environmentVariables>
+          </configuration>
+          <executions>
+            <execution>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <!-- Coverage is wired up now so phase 8 only has to raise thresholds. -->
+      <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>${jacoco.version}</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
