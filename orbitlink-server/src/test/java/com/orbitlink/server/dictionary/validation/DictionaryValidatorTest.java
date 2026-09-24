@@ -23,11 +23,11 @@ class DictionaryValidatorTest {
             String mnemonic, int apid, ParameterDataType type, int offset, int length) {
         return new ParameterDefinition(
                 mnemonic, mnemonic + " name", null, apid, type, offset, length,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
     }
 
     private static DictionaryFile file(ParameterDefinition... parameters) {
-        return new DictionaryFile("1.0.0", "test", List.of(parameters));
+        return new DictionaryFile("1.0.0", "test", List.of(parameters), List.of());
     }
 
     private static List<String> rules(ValidationReport report) {
@@ -64,10 +64,10 @@ class DictionaryValidatorTest {
     void flagsDuplicateDisplayNamesAsWarningsOnly() {
         ParameterDefinition a = new ParameterDefinition(
                 "A", "Bus voltage", null, 100, ParameterDataType.UNSIGNED_INT, 0, 16,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
         ParameterDefinition b = new ParameterDefinition(
                 "B", "Bus voltage", null, 100, ParameterDataType.UNSIGNED_INT, 16, 16,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
 
         ValidationReport report = validator.validate(file(a, b));
 
@@ -82,7 +82,7 @@ class DictionaryValidatorTest {
     void flagsInvertedLimits() {
         ParameterDefinition p = new ParameterDefinition(
                 "TEMP", "Temp", null, 100, ParameterDataType.SIGNED_INT, 0, 16,
-                "degC", 80.0, -20.0, null, null, null);
+                "degC", 80.0, -20.0, null, null, null, null, null);
 
         assertThat(rules(validator.validate(file(p)))).contains("INVERTED_LIMITS");
     }
@@ -91,7 +91,7 @@ class DictionaryValidatorTest {
     void acceptsEqualMinAndMax() {
         ParameterDefinition p = new ParameterDefinition(
                 "FIXED", "Fixed", null, 100, ParameterDataType.UNSIGNED_INT, 0, 16,
-                "count", 5.0, 5.0, null, null, null);
+                "count", 5.0, 5.0, null, null, null, null, null);
 
         assertThat(validator.validate(file(p)).valid()).isTrue();
     }
@@ -102,7 +102,7 @@ class DictionaryValidatorTest {
     void warnsOnUnknownUnitsWithoutBlockingTheLoad() {
         ParameterDefinition p = new ParameterDefinition(
                 "SENSOR", "Sensor", null, 100, ParameterDataType.UNSIGNED_INT, 0, 16,
-                "furlongs", null, null, null, null, null);
+                "furlongs", null, null, null, null, null, null, null);
 
         ValidationReport report = validator.validate(file(p));
 
@@ -114,7 +114,7 @@ class DictionaryValidatorTest {
     void acceptsKnownUnits() {
         ParameterDefinition p = new ParameterDefinition(
                 "BATT_V", "Bus voltage", null, 100, ParameterDataType.UNSIGNED_INT, 0, 16,
-                "V", null, null, null, null, null);
+                "V", null, null, null, null, null, null, null);
 
         assertThat(validator.validate(file(p)).findings()).isEmpty();
     }
@@ -163,7 +163,7 @@ class DictionaryValidatorTest {
     void rejectsEnumStatesOnANonEnumParameter() {
         ParameterDefinition p = new ParameterDefinition(
                 "V", "V", null, 100, ParameterDataType.UNSIGNED_INT, 0, 16,
-                null, null, null, null, null,
+                null, null, null, null, null, null, null,
                 List.of(new EnumStateDefinition(0L, "OFF")));
 
         assertThat(rules(validator.validate(file(p)))).contains("STATES_ON_NON_ENUM");
@@ -173,7 +173,7 @@ class DictionaryValidatorTest {
     void rejectsDuplicateEnumRawValues() {
         ParameterDefinition p = new ParameterDefinition(
                 "MODE", "Mode", null, 100, ParameterDataType.ENUM, 0, 8,
-                null, null, null, null, null,
+                null, null, null, null, null, null, null,
                 List.of(new EnumStateDefinition(1L, "A"), new EnumStateDefinition(1L, "B")));
 
         assertThat(rules(validator.validate(file(p)))).contains("DUPLICATE_ENUM_VALUE");
@@ -184,7 +184,7 @@ class DictionaryValidatorTest {
     void rejectsAnEnumValueTooLargeForItsField() {
         ParameterDefinition p = new ParameterDefinition(
                 "MODE", "Mode", null, 100, ParameterDataType.ENUM, 0, 2,
-                null, null, null, null, null,
+                null, null, null, null, null, null, null,
                 List.of(new EnumStateDefinition(0L, "A"), new EnumStateDefinition(9L, "B")));
 
         assertThat(rules(validator.validate(file(p)))).contains("ENUM_VALUE_OUT_OF_RANGE");
@@ -196,7 +196,7 @@ class DictionaryValidatorTest {
     void rejectsAZeroCalibrationScale() {
         ParameterDefinition p = new ParameterDefinition(
                 "V", "V", null, 100, ParameterDataType.UNSIGNED_INT, 0, 16,
-                "V", null, null, 0.0, null, null);
+                "V", null, null, null, null, 0.0, null, null);
 
         assertThat(rules(validator.validate(file(p)))).contains("ZERO_CALIBRATION_SCALE");
     }
@@ -249,7 +249,7 @@ class DictionaryValidatorTest {
     void reportsMissingRequiredFields() {
         ParameterDefinition p = new ParameterDefinition(
                 null, null, null, null, null, null, null,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
 
         assertThat(rules(validator.validate(file(p)))).contains(
                 "MISSING_MNEMONIC", "MISSING_NAME", "MISSING_APID",
@@ -261,7 +261,7 @@ class DictionaryValidatorTest {
     void reportsAllFindingsAtOnceWithErrorsFirst() {
         ParameterDefinition bad = new ParameterDefinition(
                 "BAD", "Bad", null, 100, ParameterDataType.UNSIGNED_INT, 0, 16,
-                "furlongs", 10.0, 1.0, null, null, null);
+                "furlongs", 10.0, 1.0, null, null, null, null, null);
 
         ValidationReport report = validator.validate(file(bad));
 

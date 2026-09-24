@@ -1,5 +1,6 @@
 package com.orbitlink.server.dictionary;
 
+import com.orbitlink.server.command.CommandDefinition;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -52,6 +53,9 @@ public class TelemetryDictionary {
     @OneToMany(mappedBy = "dictionary", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TelemetryParameter> parameters = new ArrayList<>();
 
+    @OneToMany(mappedBy = "dictionary", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CommandDefinition> commands = new ArrayList<>();
+
     protected TelemetryDictionary() {
         // Required by JPA.
     }
@@ -98,5 +102,15 @@ public class TelemetryDictionary {
 
     public List<TelemetryParameter> getParameters() {
         return parameters;
+    }
+
+    /** Adds a command and keeps both sides of the association consistent. */
+    public void addCommand(CommandDefinition command) {
+        commands.add(command);
+        command.setDictionary(this);
+    }
+
+    public List<CommandDefinition> getCommands() {
+        return commands;
     }
 }

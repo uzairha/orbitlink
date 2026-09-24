@@ -1,5 +1,6 @@
 package com.orbitlink.server.telemetry;
 
+import com.orbitlink.server.alarm.AlarmService;
 import com.orbitlink.server.dictionary.TelemetryParameter;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -24,11 +25,14 @@ public class TelemetryIngestionService {
 
     private final ActiveDictionaryCache dictionaryCache;
     private final TelemetrySampleRepository sampleRepository;
+    private final AlarmService alarmService;
 
     public TelemetryIngestionService(ActiveDictionaryCache dictionaryCache,
-                                     TelemetrySampleRepository sampleRepository) {
+                                     TelemetrySampleRepository sampleRepository,
+                                     AlarmService alarmService) {
         this.dictionaryCache = dictionaryCache;
         this.sampleRepository = sampleRepository;
+        this.alarmService = alarmService;
     }
 
     /**
@@ -77,6 +81,10 @@ public class TelemetryIngestionService {
         // saveAll batches the inserts into one flush rather than one statement
         // per sample.
         sampleRepository.saveAll(samples);
+
+        // Same transaction as the samples: an alarm must never be visible
+        // without the sample that caused it, nor the reverse.
+        alarmService.evaluate(decoded, receivedAt);
 
         return decoded;
     }

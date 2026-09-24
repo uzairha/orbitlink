@@ -26,8 +26,10 @@ parameters:
     # Raw counts are millivolts; 0.001 V per count puts the value in volts.
     calScale: 0.001
     calOffset: 0.0
-    minValue: 22.0
-    maxValue: 34.0
+    minValue: 22.0      # critical low
+    maxValue: 34.0      # critical high
+    warnLow: 24.0       # warning low
+    warnHigh: 32.0      # warning high
 
   - mnemonic: BATT_CURRENT
     name: Battery current
@@ -41,6 +43,8 @@ parameters:
     calOffset: 0.0
     minValue: -20.0
     maxValue: 20.0
+    warnLow: -15.0
+    warnHigh: 15.0
 
   - mnemonic: BATT_TEMP
     name: Battery temperature
@@ -56,6 +60,8 @@ parameters:
     calOffset: 0.0
     minValue: -20.0
     maxValue: 60.0
+    warnLow: -10.0
+    warnHigh: 45.0
 
   - mnemonic: SOLAR_ARRAY_PWR
     name: Solar array output power
@@ -68,6 +74,7 @@ parameters:
     calOffset: 0.0
     minValue: 0.0
     maxValue: 450.0
+    warnHigh: 420.0
 
   - mnemonic: EPS_MODE
     name: Electrical power subsystem mode
@@ -144,3 +151,53 @@ parameters:
         label: DEGRADED
       - rawValue: 2
         label: FAILED
+
+# --- Commands -------------------------------------------------------------
+#
+# Versioned alongside the telemetry above: the commands a spacecraft accepts
+# and the telemetry it returns change together.
+
+commands:
+
+  - mnemonic: SET_HEATER
+    name: Set battery heater state
+    description: Enables or disables the battery survival heater
+    apid: 200
+    functionCode: 1
+    arguments:
+      - name: enable
+        description: True to energise the heater
+        dataType: BOOLEAN
+
+  - mnemonic: SET_EPS_MODE
+    name: Set electrical power subsystem mode
+    apid: 200
+    functionCode: 2
+    arguments:
+      - name: mode
+        dataType: ENUM
+        allowedValues: [NOMINAL, LOW_POWER, SAFE_MODE, SURVIVAL]
+
+  - mnemonic: SET_TLM_RATE
+    name: Set telemetry downlink rate
+    apid: 200
+    functionCode: 3
+    arguments:
+      - name: hz
+        description: Telemetry cycles per second
+        dataType: FLOAT
+        minValue: 0.1
+        maxValue: 20.0
+
+  - mnemonic: ENTER_SAFE_MODE
+    name: Command the spacecraft to safe mode
+    description: Sheds non-essential loads and points the array at the sun
+    apid: 200
+    functionCode: 10
+    # Hazardous: hard to undo without a ground pass, so it needs explicit
+    # operator confirmation before it will be accepted.
+    hazardous: true
+    arguments:
+      - name: reason
+        dataType: STRING
+        required: false

@@ -22,8 +22,12 @@ public record ParameterDefinition(
         Integer bitOffset,
         Integer bitLength,
         String units,
+        // Critical (red) limits.
         Double minValue,
         Double maxValue,
+        // Warning (yellow) limits, nested inside the critical pair.
+        Double warnLow,
+        Double warnHigh,
         Double calScale,
         Double calOffset,
         List<EnumStateDefinition> enumStates) {

@@ -60,12 +60,26 @@ public class TelemetryParameter {
     @Column(length = 32)
     private String units;
 
-    /** Boxed Double, not double: null means "no limit defined", which 0.0 cannot express. */
+    /**
+     * Critical (red) limits. Boxed Double, not double: null means "no limit
+     * defined", which 0.0 cannot express.
+     *
+     * <p>These columns are named min/max for historical reasons — see the V3
+     * migration. They are the CRITICAL thresholds; {@link #warnLow} and
+     * {@link #warnHigh} sit inside them.
+     */
     @Column(name = "min_value")
     private Double minValue;
 
     @Column(name = "max_value")
     private Double maxValue;
+
+    /** Warning (yellow) limits, nested inside the critical pair. */
+    @Column(name = "warn_low")
+    private Double warnLow;
+
+    @Column(name = "warn_high")
+    private Double warnHigh;
 
     @Column(name = "cal_scale", nullable = false)
     private double calScale = 1.0;
@@ -171,6 +185,22 @@ public class TelemetryParameter {
 
     public void setMaxValue(Double maxValue) {
         this.maxValue = maxValue;
+    }
+
+    public Double getWarnLow() {
+        return warnLow;
+    }
+
+    public void setWarnLow(Double warnLow) {
+        this.warnLow = warnLow;
+    }
+
+    public Double getWarnHigh() {
+        return warnHigh;
+    }
+
+    public void setWarnHigh(Double warnHigh) {
+        this.warnHigh = warnHigh;
     }
 
     public double getCalScale() {

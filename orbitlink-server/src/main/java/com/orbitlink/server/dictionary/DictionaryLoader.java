@@ -2,8 +2,11 @@ package com.orbitlink.server.dictionary;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.orbitlink.server.command.CommandArgument;
+import com.orbitlink.server.command.CommandDefinition;
 import com.orbitlink.server.dictionary.validation.DictionaryValidator;
 import com.orbitlink.server.dictionary.validation.ValidationReport;
+import com.orbitlink.server.dictionary.yaml.CommandDefinitionYaml;
 import com.orbitlink.server.dictionary.yaml.DictionaryFile;
 import com.orbitlink.server.dictionary.yaml.EnumStateDefinition;
 import com.orbitlink.server.dictionary.yaml.ParameterDefinition;
@@ -84,6 +87,9 @@ public class DictionaryLoader {
         for (ParameterDefinition definition : file.parameters()) {
             dictionary.addParameter(toEntity(definition));
         }
+        for (CommandDefinitionYaml definition : file.commandsOrEmpty()) {
+            dictionary.addCommand(toCommandEntity(definition));
+        }
 
         if (activate) {
             // Clearing the previous active flag and setting the new one happen
@@ -97,8 +103,9 @@ public class DictionaryLoader {
         }
 
         TelemetryDictionary saved = dictionaryRepository.save(dictionary);
-        log.info("Loaded dictionary version={} parameters={} active={}",
-                saved.getVersion(), saved.getParameters().size(), saved.isActive());
+        log.info("Loaded dictionary version={} parameters={} commands={} active={}",
+                saved.getVersion(), saved.getParameters().size(),
+                saved.getCommands().size(), saved.isActive());
         return saved;
     }
 
@@ -115,6 +122,8 @@ public class DictionaryLoader {
         parameter.setUnits(definition.units());
         parameter.setMinValue(definition.minValue());
         parameter.setMaxValue(definition.maxValue());
+        parameter.setWarnLow(definition.warnLow());
+        parameter.setWarnHigh(definition.warnHigh());
         parameter.setCalScale(definition.calScaleOrDefault());
         parameter.setCalOffset(definition.calOffsetOrDefault());
 
@@ -122,5 +131,30 @@ public class DictionaryLoader {
             parameter.addEnumState(new ParameterEnumState(state.rawValue(), state.label()));
         }
         return parameter;
+    }
+
+    private CommandDefinition toCommandEntity(CommandDefinitionYaml definition) {
+        CommandDefinition command = new CommandDefinition(
+                definition.mnemonic(), definition.name(),
+                definition.apid(), definition.functionCode());
+        command.setDescription(definition.description());
+        command.setHazardous(definition.hazardousOrDefault());
+
+        // Position comes from declaration order rather than being written out
+        // in the file: arguments are packed into the uplink in the order they
+        // are listed, so the file's order is already the source of truth and
+        // restating it invites the two disagreeing.
+        int position = 0;
+        for (CommandDefinitionYaml.ArgumentYaml argumentYaml : definition.argumentsOrEmpty()) {
+            CommandArgument argument = new CommandArgument(
+                    argumentYaml.name(), argumentYaml.dataType(), position++);
+            argument.setDescription(argumentYaml.description());
+            argument.setMinValue(argumentYaml.minValue());
+            argument.setMaxValue(argumentYaml.maxValue());
+            argument.setAllowedValues(argumentYaml.allowedValuesCsv());
+            argument.setRequired(argumentYaml.requiredOrDefault());
+            command.addArgument(argument);
+        }
+        return command;
     }
 }

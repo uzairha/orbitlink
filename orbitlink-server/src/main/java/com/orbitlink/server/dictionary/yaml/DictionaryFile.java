@@ -28,5 +28,11 @@ import java.util.List;
 public record DictionaryFile(
         String version,
         String description,
-        List<ParameterDefinition> parameters) {
+        List<ParameterDefinition> parameters,
+        List<CommandDefinitionYaml> commands) {
+
+    /** Commands are optional: a telemetry-only dictionary is legitimate. */
+    public List<CommandDefinitionYaml> commandsOrEmpty() {
+        return commands != null ? commands : List.of();
+    }
 }

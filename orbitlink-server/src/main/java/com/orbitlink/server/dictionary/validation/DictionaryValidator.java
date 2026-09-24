@@ -148,10 +148,41 @@ public class DictionaryValidator {
                 findings.add(ValidationFinding.error("INVERTED_LIMITS", id,
                         "minValue " + p.minValue() + " is greater than maxValue " + p.maxValue()));
             }
+            if (p.warnLow() != null && p.warnHigh() != null
+                    && p.warnLow() > p.warnHigh()) {
+                findings.add(ValidationFinding.error("INVERTED_WARNING_LIMITS", id,
+                        "warnLow " + p.warnLow() + " is greater than warnHigh " + p.warnHigh()));
+            }
+
+            // Warning limits must sit inside the critical pair. A warning band
+            // outside the critical one can never be reached: the value trips
+            // CRITICAL first, so the warning is dead configuration and almost
+            // always means the two pairs were swapped.
+            if (p.warnLow() != null && p.minValue() != null && p.warnLow() < p.minValue()) {
+                findings.add(ValidationFinding.error("WARNING_OUTSIDE_CRITICAL", id,
+                        "warnLow " + p.warnLow() + " is below the critical low " + p.minValue()
+                                + ", so it can never trigger"));
+            }
+            if (p.warnHigh() != null && p.maxValue() != null && p.warnHigh() > p.maxValue()) {
+                findings.add(ValidationFinding.error("WARNING_OUTSIDE_CRITICAL", id,
+                        "warnHigh " + p.warnHigh() + " is above the critical high " + p.maxValue()
+                                + ", so it can never trigger"));
+            }
+            // A warning limit with no critical counterpart is legal but worth
+            // noting: the parameter can go yellow but never red on that side.
+            if (p.warnLow() != null && p.minValue() == null) {
+                findings.add(ValidationFinding.warning("WARNING_WITHOUT_CRITICAL", id,
+                        "warnLow is defined with no critical low limit"));
+            }
+            if (p.warnHigh() != null && p.maxValue() == null) {
+                findings.add(ValidationFinding.warning("WARNING_WITHOUT_CRITICAL", id,
+                        "warnHigh is defined with no critical high limit"));
+            }
             // Limits on a non-numeric parameter cannot be evaluated: there is
             // no ordering over enum labels or a boolean.
             if (p.dataType() != null && !p.dataType().isNumeric()
-                    && (p.minValue() != null || p.maxValue() != null)) {
+                    && (p.minValue() != null || p.maxValue() != null
+                        || p.warnLow() != null || p.warnHigh() != null)) {
                 findings.add(ValidationFinding.warning("LIMITS_ON_NON_NUMERIC", id,
                         "limits are defined on a " + p.dataType() + " parameter and will be ignored"));
             }

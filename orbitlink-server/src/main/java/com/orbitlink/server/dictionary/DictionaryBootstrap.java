@@ -1,6 +1,7 @@
 package com.orbitlink.server.dictionary;
 
 import com.orbitlink.server.dictionary.yaml.DictionaryFile;
+import com.orbitlink.server.alarm.AlarmService;
 import com.orbitlink.server.telemetry.ActiveDictionaryCache;
 import java.io.InputStream;
 import org.slf4j.Logger;
@@ -33,6 +34,7 @@ public class DictionaryBootstrap implements ApplicationRunner {
     private final TelemetryDictionaryRepository repository;
     private final ResourceLoader resourceLoader;
     private final ActiveDictionaryCache dictionaryCache;
+    private final AlarmService alarmService;
     private final boolean enabled;
     private final String location;
 
@@ -41,6 +43,7 @@ public class DictionaryBootstrap implements ApplicationRunner {
             TelemetryDictionaryRepository repository,
             ResourceLoader resourceLoader,
             ActiveDictionaryCache dictionaryCache,
+            AlarmService alarmService,
             @Value("${orbitlink.dictionary.bootstrap-enabled:true}") boolean enabled,
             @Value("${orbitlink.dictionary.location:classpath:dictionary/sample-dictionary.yaml}")
             String location) {
@@ -48,6 +51,7 @@ public class DictionaryBootstrap implements ApplicationRunner {
         this.repository = repository;
         this.resourceLoader = resourceLoader;
         this.dictionaryCache = dictionaryCache;
+        this.alarmService = alarmService;
         this.enabled = enabled;
         this.location = location;
     }
@@ -68,5 +72,10 @@ public class DictionaryBootstrap implements ApplicationRunner {
         // existing database nothing else would load it, and ingestion would
         // silently drop every packet for want of a dictionary.
         dictionaryCache.reload();
+
+        // Rebuild in-memory alarm state from any excursions still open, so a
+        // restart mid-anomaly neither orphans the alarm nor tries to raise a
+        // duplicate for the same parameter.
+        alarmService.restoreFromDatabase();
     }
 }

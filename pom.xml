@@ -165,6 +165,42 @@
               <goal>report</goal>
             </goals>
           </execution>
+          <!--
+            Fails the build if coverage drops below the floor.
+
+            The thresholds are deliberately modest and measured against BUNDLE
+            scope rather than per class. A high per-class bar would push toward
+            writing tests for JPA getters and Spring wiring to chase a number,
+            which is how a coverage gate starts producing worse tests. The
+            point here is to catch a real regression — a decoder or validator
+            arriving with no tests at all — not to hit 100%.
+          -->
+          <execution>
+            <id>check</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>INSTRUCTION</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.30</minimum>
+                    </limit>
+                    <limit>
+                      <counter>BRANCH</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.25</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
     </plugins>
